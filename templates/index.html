@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hybrid Waste Visualizer</title>
+    <!-- Outfit & Inter Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="background-gradients">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="app-container">
+        <header class="app-header">
+            <h1>Adaptive Explainable Hybrid Transformer Framework</h1>
+            <p>Fine-Grained Waste Classification & Segmentation with Cross-Attention Fusion & Adaptive XAI</p>
+        </header>
+
+        <main class="dashboard-grid">
+            <!-- Sidebar: Inputs and Controls -->
+            <section class="sidebar">
+                <!-- Card 1: Upload Card -->
+                <div class="glass-card upload-card">
+                    <h2>Upload Waste Image</h2>
+                    <div class="drop-zone" id="drop-zone">
+                        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                        </svg>
+                        <p class="drop-zone-text">Drag & drop your image here, or <span>browse</span></p>
+                        <input type="file" id="file-input" accept="image/*" style="display: none;">
+                    </div>
+                    <div class="control-group">
+                        <label for="stage-select">Model Training Stage:</label>
+                        <select id="stage-select" class="glass-select">
+                            <option value="stage3" selected>Stage 3: ZeroWaste (Conveyor Metal & Plastic Segmentation)</option>
+                            <option value="stage2">Stage 2: TACO (Multi-class Classification & Segmentation)</option>
+                            <option value="stage1">Stage 1: TrashNet (Fine-grained Classification - No Seg)</option>
+                        </select>
+                        <div class="stage-info-box" id="stage-info">
+                            <strong>Stage 3: ZeroWaste Industrial</strong>
+                            <p>Fine-tuned specifically for conveyor belt industrial sorting. Segments metal, plastic, and cardboard. Glass, paper, and general trash are treated as background.</p>
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" id="btn-predict" disabled>Run Inference</button>
+                    </div>
+                </div>
+
+                <!-- Card 2: Prediction Metrics -->
+                <div class="glass-card metrics-card hidden" id="metrics-card">
+                    <h2>Prediction Summary</h2>
+                    <div class="prediction-header">
+                        <span class="pred-class-label" id="pred-class">Plastic</span>
+                        <span class="pred-conf-val" id="pred-confidence">98.5%</span>
+                    </div>
+                    <div class="conf-meter-wrapper">
+                        <div class="conf-meter-fill" id="conf-meter-fill" style="width: 98.5%;"></div>
+                    </div>
+                    
+                    <div class="detailed-probabilities" id="detailed-probs">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+
+                <!-- Card 3: Adaptive Gating weights -->
+                <div class="glass-card gating-card hidden" id="gating-card">
+                    <h2>Adaptive Gating Routing</h2>
+                    <div class="gating-visual">
+                        <div class="gating-label">
+                            <span>ViT Branch (Global)</span>
+                            <span id="vit-weight-val">0.50</span>
+                        </div>
+                        <div class="gating-bar-wrapper">
+                            <div class="gating-bar-vit" id="gating-bar-vit" style="width: 50%;"></div>
+                            <div class="gating-bar-cnn" id="gating-bar-cnn" style="width: 50%;"></div>
+                        </div>
+                        <div class="gating-label">
+                            <span>Deformable CNN (Local)</span>
+                            <span id="cnn-weight-val">0.50</span>
+                        </div>
+                    </div>
+                    <div class="explainer-status">
+                        <span>Selected Explainer:</span>
+                        <strong id="active-explainer">ATTENTION ROLLOUT</strong>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Main Content Area: Visualizer Cards -->
+            <section class="visualizer-container">
+                <!-- Panel 1: Original Input -->
+                <div class="glass-card visual-panel">
+                    <h3>Input Image</h3>
+                    <div class="image-wrapper">
+                        <img id="img-input" src="/static/placeholder.png" alt="Upload input to begin">
+                    </div>
+                </div>
+
+                <!-- Panel 2: Segmentation Overlay -->
+                <div class="glass-card visual-panel">
+                    <div class="panel-header">
+                        <h3>Segmentation Mask Overlay</h3>
+                        <div class="opacity-control">
+                            <label for="mask-opacity">Opacity:</label>
+                            <input type="range" id="mask-opacity" min="0" max="1" step="0.05" value="0.5">
+                        </div>
+                    </div>
+                    <div class="image-wrapper segmentation-container">
+                        <!-- We overlay predictions dynamically -->
+                        <img class="img-base" id="img-input-bg" src="/static/placeholder.png" alt="">
+                        <img class="img-overlay" id="img-segmentation" src="/static/placeholder.png" alt="">
+                    </div>
+                </div>
+
+                <!-- Panel 3: Grad-CAM heatmap -->
+                <div class="glass-card visual-panel">
+                    <h3>Grad-CAM (CNN Activation)</h3>
+                    <div class="image-wrapper">
+                        <img id="img-gradcam" src="/static/placeholder.png" alt="Run prediction to visualize">
+                    </div>
+                </div>
+
+                <!-- Panel 4: Attention Rollout map -->
+                <div class="glass-card visual-panel">
+                    <h3>Attention Rollout (ViT Self-Attention)</h3>
+                    <div class="image-wrapper">
+                        <img id="img-rollout" src="/static/placeholder.png" alt="Run prediction to visualize">
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Spinner Loading Overlay -->
+    <div class="loading-overlay hidden" id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p>Running multi-task inference & extracting explainability maps...</p>
+    </div>
+
+    <script src="/static/main.js"></script>
+</body>
+</html>

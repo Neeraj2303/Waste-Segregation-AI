@@ -1,0 +1,21 @@
+# Stage 3 Configuration - ZeroWaste Segmentation Fine-tuning
+
+run_name: "stage3_zerowaste"
+
+dataset:
+  synthetic: false
+  zerowaste_path: "data/ZeroWaste"
+  batch_size: 8
+
+# Segmentation focused
+loss:
+  cls_weight: 0.1 # Small classification regularization
+  seg_weight: 0.9
+  cls_loss_type: "cross_entropy"
+
+training:
+  epochs: 8
+  early_stopping_patience: 3
+
+optimizer:
+  lr: 0.00002 # Very low LR for downstream fine-tuning

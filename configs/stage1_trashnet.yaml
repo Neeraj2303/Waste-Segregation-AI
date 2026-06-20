@@ -1,0 +1,21 @@
+# Stage 1 Configuration - TrashNet Classification Training
+
+run_name: "stage1_trashnet"
+
+dataset:
+  synthetic: false
+  trashnet_path: "data/TrashNet"
+  batch_size: 16
+
+# Classification only (TrashNet doesn't have segmentation masks)
+loss:
+  cls_weight: 1.0
+  seg_weight: 0.0
+  cls_loss_type: "cross_entropy"
+
+training:
+  epochs: 15
+  early_stopping_patience: 4
+
+optimizer:
+  lr: 0.0001

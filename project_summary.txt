@@ -1,0 +1,153 @@
+========================================================================
+ADAPTIVE EXPLAINABLE HYBRID TRANSFORMER FRAMEWORK FOR FINE-GRAINED WASTE
+CLASSIFICATION AND SEGMENTATION - PROJECT STATUS SUMMARY
+========================================================================
+Date: 2026-06-10
+Status: ACTIVE - All 3 Stages Trained and Evaluated on Real Datasets
+
+------------------------------------------------------------------------
+1. PROJECT OBJECTIVES & ARCHITECTURE
+------------------------------------------------------------------------
+Goal: Establish a research-grade waste classification and segmentation
+system combining:
+* Branch A: Global vision features using the EVA-02 Vision Transformer.
+* Branch B: Local geometry and shape features using a Deformable CNN.
+* Fusion: Bidirectional Cross-Attention module connecting the branches.
+* Multi-Task Heads: Classification MLP + segmentation U-Net decoder.
+* Explainability (XAI): Gated Attention Rollout vs. Grad-CAM visualizer.
+
+------------------------------------------------------------------------
+2. DATASETS STATUS & SPLITS (VERIFIED & UNIQUE)
+------------------------------------------------------------------------
+* Stage 1: TrashNet (Classification)
+  - Dataset: 6 category folders (cardboard, glass, metal, paper, plastic, trash)
+  - Location: data/TrashNet
+  - Split: 80% train, 10% val, 10% test (2,527 images total)
+* Stage 2: TACO (Object classification + segmentation)
+  - Dataset: COCO JSON annotations + image batch folders
+  - Location: data/TACO
+  - Split: 80% train, 10% val, 10% test (1,500 images total)
+* Stage 3: ZeroWaste-f (Semantic Segmentation)
+  - Dataset: Labeled video frame splits (train, val, test) + labels/masks
+  - Location: data/ZeroWaste
+  - Split (Deduplicated):
+    - Train: 3,002 images & masks
+    - Validation: 572 images & masks
+    - Test: 929 images & masks
+
+------------------------------------------------------------------------
+3. TRAINING RESULTS BY STAGE (REAL DATASET EVALUATION)
+------------------------------------------------------------------------
+
+=== STAGE 1: TRASHNET CLASSIFICATION ===
+* Checkpoint: checkpoints/stage1_trashnet_stage1_best.pt
+* Validation Accuracy: 98.41% (0.9841)
+
+* Classification Report:
+               precision    recall  f1-score   support
+
+   cardboard       1.00      1.00      1.00        39
+       glass       0.96      0.96      0.96        54
+       metal       1.00      0.97      0.99        39
+       paper       1.00      1.00      1.00        61
+     plastic       0.95      0.98      0.96        42
+       trash       1.00      1.00      1.00        17
+
+    accuracy                           0.98       252
+   macro avg       0.99      0.99      0.99       252
+weighted avg       0.98      0.98      0.98       252
+
+* Confusion Matrix (Row: True, Col: Predicted):
+              cardboard  glass  metal  paper  plastic  trash
+  cardboard   [   39,     0,     0,     0,      0,     0 ]
+  glass       [    0,    52,     0,     0,      2,     0 ]
+  metal       [    0,     1,    38,     0,      0,     0 ]
+  paper       [    0,     0,     0,    61,      0,     0 ]
+  plastic     [    0,     1,     0,     0,     41,     0 ]
+  trash       [    0,     0,     0,     0,      0,    17 ]
+
+
+=== STAGE 2: TACO CLASSIFICATION + SEGMENTATION ===
+* Checkpoint: checkpoints/stage2_taco_stage2_best.pt
+* Validation Accuracy: 56.00% (0.5600)
+* Validation Pixel Segmentation Accuracy: 96.23% (0.9623)
+
+* Classification Report:
+               precision    recall  f1-score   support
+
+   cardboard       0.22      0.33      0.27         6
+       glass       0.50      0.09      0.15        11
+       metal       0.70      0.35      0.47        20
+       paper       0.00      0.00      0.00         7
+     plastic       0.64      0.87      0.74        82
+       trash       0.19      0.12      0.15        24
+
+    accuracy                           0.56       150
+   macro avg       0.37      0.29      0.30       150
+weighted avg       0.52      0.56      0.51       150
+
+* Confusion Matrix (Row: True, Col: Predicted):
+              cardboard  glass  metal  paper  plastic  trash
+  cardboard   [    2,     0,     0,     0,      3,     1 ]
+  glass       [    0,     1,     0,     0,     10,     0 ]
+  metal       [    1,     0,     7,     0,      7,     5 ]
+  paper       [    0,     0,     0,     0,      5,     2 ]
+  plastic     [    3,     1,     1,     1,     71,     5 ]
+  trash       [    3,     0,     2,     1,     15,     3 ]
+
+
+=== STAGE 3: ZEROWASTE SEGMENTATION FINE-TUNING ===
+* Checkpoint: checkpoints/stage3_zerowaste_stage3_best.pt
+* Validation Accuracy: 76.57% (0.7657)
+* Validation Pixel Segmentation Accuracy: 77.41% (0.7741)
+
+* Classification Report:
+               precision    recall  f1-score   support
+
+   cardboard       0.00      0.00      0.00        12
+       glass       0.00      0.00      0.00         0
+       metal       0.84      0.86      0.85       415
+       paper       0.00      0.00      0.00         0
+     plastic       0.56      0.58      0.57       144
+       trash       0.00      0.00      0.00         1
+
+    accuracy                           0.77       572
+   macro avg       0.23      0.24      0.24       572
+weighted avg       0.75      0.77      0.76       572
+
+* Confusion Matrix (Row: True, Col: Predicted):
+              cardboard  glass  metal  paper  plastic  trash
+  cardboard   [    0,     0,     8,     0,      4,     0 ]
+  glass       [    0,     0,     0,     0,      0,     0 ]
+  metal       [    0,     0,   355,     0,     60,     0 ]
+  paper       [    0,     0,     0,     0,      0,     0 ]
+  plastic     [    0,     0,    61,     0,     83,     0 ]
+  trash       [    0,     0,     1,     0,      0,     0 ]
+
+Note: In Stage 3, since paper and glass categories are not present in the
+ZeroWaste industrial splits, they receive 0 support in the validation set.
+
+------------------------------------------------------------------------
+4. BUG RESOLUTIONS
+------------------------------------------------------------------------
+The following critical code modifications were implemented to resolve Windows-
+and dataset-specific runtime errors:
+
+* Windows Case-Insensitive Globbing Bug:
+  - Cause: On Windows, globbing matching patterns like '*.png' and '*.PNG' 
+    returns duplicate paths for the same files, doubling the dataset size.
+  - Fix: Implemented os.path.normpath + set deduplication inside 
+    datasets/zerowaste.py and datasets/trashnet.py.
+* ZeroWaste-f Path Adapter Alignment:
+  - Cause: ZeroWasteDataset expected root_dir/images/[split] but the real 
+    dataset extracts to root_dir/[split]/data.
+  - Fix: Updated datasets/zerowaste.py to read directly from split folders 
+    data/ZeroWaste/[split]/data and sem_seg.
+* SubsetWrapper Dataset Attribute Bug:
+  - Cause: SubsetWrapper assumed all inputs are PyTorch Subset splits 
+    (with indices and .dataset attributes), throwing AttributeError for raw 
+    ZeroWasteDataset objects.
+  - Fix: Added a hasattr(subset, 'dataset') fallback check inside 
+    datasets/__init__.py to support raw datasets.
+
+========================================================================

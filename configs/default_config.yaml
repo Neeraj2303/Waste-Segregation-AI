@@ -1,0 +1,75 @@
+# Default Configuration for Adaptive Explainable Hybrid Transformer Framework
+
+# Project settings
+project_name: "adaptive_waste_classification_segmentation"
+run_name: "default_run"
+seed: 42
+device: "cuda" # cuda or cpu
+use_amp: true # Mixed precision training
+
+# Dataset configuration
+dataset:
+  synthetic: true # If true, generates synthetic data for dry runs
+  trashnet_path: "data/TrashNet"
+  taco_path: "data/TACO"
+  zerowaste_path: "data/ZeroWaste"
+  img_size: 224
+  batch_size: 8
+  num_workers: 0
+  num_classes: 6 # 6 common classes: cardboard, glass, metal, paper, plastic, trash
+  class_names: ["cardboard", "glass", "metal", "paper", "plastic", "trash"]
+
+# Model Architecture
+model:
+  vit_backbone: "eva02_tiny_patch14_224" # TIMM EVA-02 variant
+  cnn_backbone: "deformable_resnet18" # options: deformable_resnet18, deformable_resnet50
+  embed_dim: 256 # Common embedding dimension for fusion
+  fusion:
+    num_heads: 4
+    dropout: 0.1
+    gate_init_value: [0.5, 0.5] # initial weights for [vit, cnn]
+  segmentation:
+    decoder_channels: [256, 128, 64, 32]
+    use_skip_connections: true
+
+# Loss configuration
+loss:
+  cls_loss_type: "cross_entropy" # options: cross_entropy, focal
+  focal_alpha: 0.25
+  focal_gamma: 2.0
+  cls_weight: 0.5
+  seg_weight: 0.5
+  dice_weight: 0.5 # relative weight of dice loss vs cross-entropy inside segmentation loss
+  ce_weight: 0.5
+
+# Optimizer and LR Scheduler
+optimizer:
+  type: "adamw"
+  lr: 0.0001
+  weight_decay: 0.01
+
+scheduler:
+  type: "cosine"
+  warmup_epochs: 3
+  min_lr: 0.000001
+
+# Training configuration
+training:
+  epochs: 10
+  early_stopping_patience: 3
+  val_check_interval: 1.0
+  checkpoint_dir: "checkpoints"
+  log_dir: "logs"
+  tb_logging: true
+  wandb_logging: false
+
+# Explainability (XAI)
+xai:
+  sample_interval: 5 # Evaluate metrics on validation every N epochs
+  eval_num_samples: 10 # Number of samples to compute quantitative XAI metrics on
+  visualization_dir: "outputs/xai"
+
+# Baseline Comparison
+baselines:
+  compare_active: false
+  models: ["resnet50", "vit_b16", "convnext_tiny", "segformer_b0"]
